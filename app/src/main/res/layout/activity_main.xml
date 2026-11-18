@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#121212">
+    android:layout_height="match_parent">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -11,79 +10,69 @@
         android:padding="20dp">
 
         <TextView
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="GT Boost"
-            android:textColor="#FFFFFF"
+            android:text="GTBoost"
             android:textSize="28sp"
             android:textStyle="bold" />
 
         <TextView
             android:id="@+id/tvSuhu"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="Suhu baterai: -"
-            android:textColor="#FFB74D"
-            android:textSize="22sp" />
+            android:layout_marginTop="20dp"
+            android:textSize="18sp" />
 
         <TextView
             android:id="@+id/tvBaterai"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Baterai: -"
-            android:textColor="#FFFFFF"
             android:textSize="18sp" />
 
         <TextView
             android:id="@+id/tvRam"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="RAM: -"
-            android:textColor="#FFFFFF"
             android:textSize="18sp" />
 
         <TextView
             android:id="@+id/tvLayar"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Layar: -"
-            android:textColor="#FFFFFF"
             android:textSize="18sp" />
 
         <TextView
             android:id="@+id/tvPeringatan"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:text=""
-            android:textColor="#FF5252"
-            android:textSize="18sp"
+            android:layout_marginTop="12dp"
+            android:textColor="#D32F2F"
+            android:textSize="16sp"
             android:textStyle="bold" />
 
         <Button
             android:id="@+id/btnLayar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
-            android:text="Buka pengaturan layar (refresh rate)" />
+            android:layout_marginTop="24dp"
+            android:text="Pengaturan layar (pilih 144 Hz)" />
 
         <Button
             android:id="@+id/btnBaterai"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Buka mode hemat / performa baterai" />
+            android:text="Mode hemat baterai" />
 
         <Button
             android:id="@+id/btnDev"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
-            android:text="Buka opsi pengembang" />
+            android:text="Opsi pengembang" />
 
     </LinearLayout>
 </ScrollView>
