@@ -129,7 +129,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
-            android:text="Bersihkan aplikasi latar belakang" />
+            android:text="MODE GAME: BUKA POINT BLANK MOBILE" />
 
         <Button
             android:id="@+id/btnMulai"

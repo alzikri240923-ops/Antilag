@@ -140,7 +140,7 @@ private val shizukuPermissionListener =
         klik(R.id.btn144) { kunciHz(144f) }
         klik(R.id.btnLepas) { lepasHz() }
 
-        klik(R.id.btnBersih) { bersihkan() }
+        klik(R.id.btnBersih) { bukaPointBlank() }
         klik(R.id.btnMulai) { mulaiPantau() }
         klik(R.id.btnStop) {
             stopService(Intent(this, TempService::class.java))
@@ -230,19 +230,24 @@ private val shizukuPermissionListener =
         return info.availMem / (1024 * 1024)
     }
 
-    private fun bersihkan() {
-        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        val awal = ramBebasMb()
-        for (app in packageManager.getInstalledApplications(0)) {
-            val sistem = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0
-            if (!sistem && app.packageName != packageName) {
-                am.killBackgroundProcesses(app.packageName)
-            }
+    private fun bukaPointBlank() {
+        val gamePackage = "app.pbmobile.nativo"
+        val intentGame = packageManager.getLaunchIntentForPackage(gamePackage)
+
+        if (intentGame != null) {
+            startActivity(intentGame)
+            Toast.makeText(
+                this,
+                "Membuka Point Blank Mobile",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(
+                this,
+                "Point Blank Mobile belum terpasang",
+                Toast.LENGTH_LONG
+            ).show()
         }
-        handler.postDelayed({
-            val selisih = ramBebasMb() - awal
-            Toast.makeText(this, "Selesai. RAM bertambah sekitar $selisih MB", Toast.LENGTH_LONG).show()
-        }, 1500)
     }
 
     private fun mulaiPantau() {
