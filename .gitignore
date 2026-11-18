@@ -1,0 +1,4 @@
+.gradle/
+**/build/
+*.backup-*
+layout_temp.xml

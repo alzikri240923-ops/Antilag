@@ -3,6 +3,10 @@ package com.gtboost.app
 import android.Manifest
 import android.app.ActivityManager
 import android.content.Context
+import android.content.ComponentName
+import android.content.ServiceConnection
+import android.os.IBinder
+import rikka.shizuku.Shizuku
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.ApplicationInfo
@@ -22,6 +26,91 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
+    private var shizukuBinding = false
+    private var pendingHz: Float? = null
+    private var pendingRelease = false
+
+private var refreshService: IRefreshRateService? = null
+private var shizukuTerhubung = false
+
+private val requestCodeShizuku = 1001
+
+private val shizukuPermissionListener =
+    Shizuku.OnRequestPermissionResultListener { requestCode, grantResult ->
+        if (requestCode == requestCodeShizuku) {
+            if (grantResult == PackageManager.PERMISSION_GRANTED) {
+                hubungkanShizuku()
+            } else {
+                Toast.makeText(
+                    this,
+                    "Izin Shizuku ditolak",
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        }
+    }
+
+    private val serviceConnection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+            refreshService = IRefreshRateService.Stub.asInterface(binder)
+            shizukuTerhubung = true
+            Toast.makeText(
+                this@MainActivity,
+                "Shizuku terhubung",
+                Toast.LENGTH_SHORT
+            ).show()
+            terapkanPermintaanTertunda()
+        }
+
+        override fun onServiceDisconnected(name: ComponentName) {
+            refreshService = null
+            shizukuTerhubung = false
+            shizukuBinding = false
+        }
+    }
+
+    private val userServiceArgs by lazy {
+        Shizuku.UserServiceArgs(
+            ComponentName(this, RefreshRateService::class.java)
+        )
+            .daemon(false)
+            .tag("GTBoostRefreshRate")
+            .version(1)
+            .processNameSuffix("refresh")
+    }
+
+    private fun hubungkanShizuku() {
+        if (shizukuBinding) return
+        if (!Shizuku.pingBinder()) {
+            Toast.makeText(this, "Shizuku belum aktif", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        try {
+            shizukuBinding = true
+            Shizuku.bindUserService(userServiceArgs, serviceConnection)
+        } catch (e: Exception) {
+            shizukuBinding = false
+            Toast.makeText(
+                this,
+                "Gagal menghubungkan Shizuku: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun mintaIzinShizuku() {
+        if (!Shizuku.pingBinder()) {
+            Toast.makeText(this, "Aktifkan Shizuku terlebih dahulu", Toast.LENGTH_LONG).show()
+            return
+        }
+
+        if (Shizuku.checkSelfPermission() == PackageManager.PERMISSION_GRANTED) {
+            hubungkanShizuku()
+        } else {
+            Shizuku.requestPermission(requestCodeShizuku)
+        }
+    }
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -39,6 +128,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+        Shizuku.addRequestPermissionResultListener(shizukuPermissionListener)
 
         klik(R.id.btnLayar) { bukaPengaturan(Settings.ACTION_DISPLAY_SETTINGS) }
         klik(R.id.btnBaterai) { bukaPengaturan(Settings.ACTION_BATTERY_SAVER_SETTINGS) }
@@ -56,6 +146,18 @@ class MainActivity : AppCompatActivity() {
             stopService(Intent(this, TempService::class.java))
             Toast.makeText(this, "Pemantau suhu dihentikan", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    override fun onDestroy() {
+        Shizuku.removeRequestPermissionResultListener(shizukuPermissionListener)
+        if (shizukuBinding) {
+            try {
+                Shizuku.unbindUserService(userServiceArgs, serviceConnection, true)
+            } catch (_: Exception) {
+            }
+            shizukuBinding = false
+        }
+        super.onDestroy()
     }
 
     override fun onResume() {
@@ -76,34 +178,48 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun izinUbahSistem(): Boolean {
-        if (Settings.System.canWrite(this)) return true
-        Toast.makeText(this, "Izinkan GTBoost mengubah pengaturan sistem, lalu kembali", Toast.LENGTH_LONG).show()
-        startActivity(
-            Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:$packageName"))
-        )
-        return false
-    }
-
     private fun kunciHz(hz: Float) {
-        if (!izinUbahSistem()) return
-        try {
-            Settings.System.putFloat(contentResolver, "min_refresh_rate", hz)
-            Settings.System.putFloat(contentResolver, "peak_refresh_rate", hz)
-            Toast.makeText(this, "Diminta ${hz.toInt()} Hz. Cek angka layar.", Toast.LENGTH_SHORT).show()
-        } catch (e: Exception) {
-            Toast.makeText(this, "Gagal mengubah: ${e.message}", Toast.LENGTH_LONG).show()
+        pendingHz = hz
+        pendingRelease = false
+
+        if (refreshService != null) {
+            terapkanPermintaanTertunda()
+        } else {
+            mintaIzinShizuku()
         }
     }
 
     private fun lepasHz() {
-        if (!izinUbahSistem()) return
+        pendingHz = null
+        pendingRelease = true
+
+        if (refreshService != null) {
+            terapkanPermintaanTertunda()
+        } else {
+            mintaIzinShizuku()
+        }
+    }
+
+    private fun terapkanPermintaanTertunda() {
+        val service = refreshService ?: return
+
         try {
-            Settings.System.putFloat(contentResolver, "min_refresh_rate", 0f)
-            Settings.System.putFloat(contentResolver, "peak_refresh_rate", 144f)
-            Toast.makeText(this, "Kunci dilepas (otomatis)", Toast.LENGTH_SHORT).show()
+            val hasil = if (pendingRelease) {
+                service.releaseRefreshRate()
+            } else {
+                val hz = pendingHz ?: return
+                service.setRefreshRate(hz)
+            }
+
+            Toast.makeText(this, hasil, Toast.LENGTH_LONG).show()
+            pendingHz = null
+            pendingRelease = false
         } catch (e: Exception) {
-            Toast.makeText(this, "Gagal mengubah: ${e.message}", Toast.LENGTH_LONG).show()
+            Toast.makeText(
+                this,
+                "Perintah Shizuku gagal: ${e.message}",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
