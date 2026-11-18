@@ -1,10 +1,15 @@
 package com.gtboost.app
 
+import android.Manifest
 import android.app.ActivityManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.ApplicationInfo
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.os.BatteryManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -13,6 +18,8 @@ import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 
 class MainActivity : AppCompatActivity() {
 
@@ -25,18 +32,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun klik(id: Int, aksi: () -> Unit) {
+        findViewById<Button>(id).setOnClickListener { aksi() }
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        findViewById<Button>(R.id.btnLayar).setOnClickListener {
-            bukaPengaturan(Settings.ACTION_DISPLAY_SETTINGS)
-        }
-        findViewById<Button>(R.id.btnBaterai).setOnClickListener {
-            bukaPengaturan(Settings.ACTION_BATTERY_SAVER_SETTINGS)
-        }
-        findViewById<Button>(R.id.btnDev).setOnClickListener {
-            bukaPengaturan(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS)
+        klik(R.id.btnLayar) { bukaPengaturan(Settings.ACTION_DISPLAY_SETTINGS) }
+        klik(R.id.btnBaterai) { bukaPengaturan(Settings.ACTION_BATTERY_SAVER_SETTINGS) }
+        klik(R.id.btnDev) { bukaPengaturan(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS) }
+
+        klik(R.id.btn60) { kunciHz(60f) }
+        klik(R.id.btn90) { kunciHz(90f) }
+        klik(R.id.btn120) { kunciHz(120f) }
+        klik(R.id.btn144) { kunciHz(144f) }
+        klik(R.id.btnLepas) { lepasHz() }
+
+        klik(R.id.btnBersih) { bersihkan() }
+        klik(R.id.btnMulai) { mulaiPantau() }
+        klik(R.id.btnStop) {
+            stopService(Intent(this, TempService::class.java))
+            Toast.makeText(this, "Pemantau suhu dihentikan", Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -56,6 +74,72 @@ class MainActivity : AppCompatActivity() {
         } catch (e: Exception) {
             Toast.makeText(this, "Pengaturan tidak bisa dibuka di HP ini", Toast.LENGTH_SHORT).show()
         }
+    }
+
+    private fun izinUbahSistem(): Boolean {
+        if (Settings.System.canWrite(this)) return true
+        Toast.makeText(this, "Izinkan GTBoost mengubah pengaturan sistem, lalu kembali", Toast.LENGTH_LONG).show()
+        startActivity(
+            Intent(Settings.ACTION_MANAGE_WRITE_SETTINGS, Uri.parse("package:$packageName"))
+        )
+        return false
+    }
+
+    private fun kunciHz(hz: Float) {
+        if (!izinUbahSistem()) return
+        try {
+            Settings.System.putFloat(contentResolver, "min_refresh_rate", hz)
+            Settings.System.putFloat(contentResolver, "peak_refresh_rate", hz)
+            Toast.makeText(this, "Diminta ${hz.toInt()} Hz. Cek angka layar.", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Gagal mengubah: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun lepasHz() {
+        if (!izinUbahSistem()) return
+        try {
+            Settings.System.putFloat(contentResolver, "min_refresh_rate", 0f)
+            Settings.System.putFloat(contentResolver, "peak_refresh_rate", 144f)
+            Toast.makeText(this, "Kunci dilepas (otomatis)", Toast.LENGTH_SHORT).show()
+        } catch (e: Exception) {
+            Toast.makeText(this, "Gagal mengubah: ${e.message}", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun ramBebasMb(): Long {
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val info = ActivityManager.MemoryInfo()
+        am.getMemoryInfo(info)
+        return info.availMem / (1024 * 1024)
+    }
+
+    private fun bersihkan() {
+        val am = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
+        val awal = ramBebasMb()
+        for (app in packageManager.getInstalledApplications(0)) {
+            val sistem = (app.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+            if (!sistem && app.packageName != packageName) {
+                am.killBackgroundProcesses(app.packageName)
+            }
+        }
+        handler.postDelayed({
+            val selisih = ramBebasMb() - awal
+            Toast.makeText(this, "Selesai. RAM bertambah sekitar $selisih MB", Toast.LENGTH_LONG).show()
+        }, 1500)
+    }
+
+    private fun mulaiPantau() {
+        if (Build.VERSION.SDK_INT >= 33 &&
+            ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), 1)
+            Toast.makeText(this, "Izinkan notifikasi, lalu tekan Mulai lagi", Toast.LENGTH_LONG).show()
+            return
+        }
+        ContextCompat.startForegroundService(this, Intent(this, TempService::class.java))
+        Toast.makeText(this, "Pemantau suhu aktif", Toast.LENGTH_SHORT).show()
     }
 
     private fun perbarui() {

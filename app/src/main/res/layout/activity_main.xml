@@ -74,5 +74,75 @@
             android:layout_marginTop="8dp"
             android:text="Opsi pengembang" />
 
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Kunci refresh rate"
+            android:textSize="18sp"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn60"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="60" />
+
+            <Button
+                android:id="@+id/btn90"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="90" />
+
+            <Button
+                android:id="@+id/btn120"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="120" />
+
+            <Button
+                android:id="@+id/btn144"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="144" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnLepas"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Lepas kunci (otomatis)" />
+
+        <Button
+            android:id="@+id/btnBersih"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Bersihkan aplikasi latar belakang" />
+
+        <Button
+            android:id="@+id/btnMulai"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Mulai pantau suhu (notifikasi)" />
+
+        <Button
+            android:id="@+id/btnStop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Berhenti pantau suhu" />
+
     </LinearLayout>
 </ScrollView>
