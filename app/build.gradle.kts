@@ -7,6 +7,10 @@ android {
     namespace = "com.gtboost.app"
     compileSdk = 34
 
+    buildFeatures {
+        aidl = true
+    }
+
     defaultConfig {
         applicationId = "com.gtboost.app"
         minSdk = 26
